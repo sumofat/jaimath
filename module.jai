@@ -151,6 +151,14 @@ operator / :: (a : float4,b : float)->float4{
     return r;    
 }
 
+operator / :: (a : float3,b : float)->float3{
+    r : float3 = ---;
+    r.x = a.x / b;
+    r.y = a.y / b;
+    r.z = a.z / b;
+    return r;    
+}
+
 float4 :: struct{
     x,y,z,w : float;
 	#place x;
@@ -174,11 +182,15 @@ multiply :: (q : quaternion,v : float3)->float3{
 }
 
 length :: (v : float3)->float{
-	return sqrt(dot(cast,force(Vector3)v, cast,force(Vector3)v));
+	return sqrt(dot(v, v));
+}
+
+distance :: (a : float3,b : float3)->float{
+	return length(b-a);
 }
 
 normalize :: (v : float3)-> float3{
-	return xx (cast,force(Vector3)v / length(v));
+	return v / length(v);
 }
 
 normalize :: (a : quaternion)-> result : quaternion{
