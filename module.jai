@@ -151,7 +151,7 @@ operator / :: (a : float4,b : float)->float4{
     return r;    
 }
 
-operator / :: (a : float3,b : float)->float3{
+operator / :: (a : float3,b : float)->float3 #symmetric{
     r : float3 = ---;
     r.x = a.x / b;
     r.y = a.y / b;
@@ -202,10 +202,21 @@ normalize :: (a : quaternion)-> result : quaternion{
 
 /*
 normalize :: (q: quaternion) -> quaternion{
-
 	return q / abs(q);
 }
 */
+
+float3x3 :: struct{
+	_11, _21, _31 : float;
+    _12, _22, _32 : float;
+    _13, _23, _33 : float;
+	#place _11;
+	c : [3]float3;
+	#place _11;
+	a : [12]float;
+	#place _11;
+	aa : [3][3]float;
+}
 
 float4x4 :: struct{
 	_11, _21, _31, _41 : float;
@@ -321,6 +332,7 @@ multiply :: (m : float4x4,n : float4x4) -> float4x4 {
 
     return result;
 }
+
 /*
 
 //This is the row matrix multiply
@@ -427,6 +439,66 @@ orthogonal :: (v: float3) -> float3{
 	return normalize(cross(v, other));
 }
 
+quaternion_from_float4x4 :: (m: float4x4) -> quaternion {
+    m3: float3x3;
+
+    m3.aa[0][0], m3.aa[1][0], m3.aa[2][0] = m.aa[0][0], m.aa[1][0], m.aa[2][0];
+    m3.aa[0][1], m3.aa[1][1], m3.aa[2][1] = m.aa[0][1], m.aa[1][1], m.aa[2][1];
+    m3.aa[0][2], m3.aa[1][2], m3.aa[2][2] = m.aa[0][2], m.aa[1][2], m.aa[2][2];
+
+    return quaternion_from_float3x3(m3);
+}
+
+quaternion_from_float3x3 :: (m: float3x3) -> quaternion{
+    four_x_squared_minus_1 := m.aa[0][0] - m.aa[1][1] - m.aa[2][2];
+    four_y_squared_minus_1 := m.aa[1][1] - m.aa[0][0] - m.aa[2][2];
+    four_z_squared_minus_1 := m.aa[2][2] - m.aa[0][0] - m.aa[1][1];
+    four_w_squared_minus_1 := m.aa[0][0] + m.aa[1][1] + m.aa[2][2];
+
+    biggest_index := 0;
+    four_biggest_squared_minus_1 := four_w_squared_minus_1;
+    if four_x_squared_minus_1 > four_biggest_squared_minus_1 {
+        four_biggest_squared_minus_1 = four_x_squared_minus_1;
+        biggest_index = 1;
+    }
+    if four_y_squared_minus_1 > four_biggest_squared_minus_1 {
+        four_biggest_squared_minus_1 = four_y_squared_minus_1;
+        biggest_index = 2;
+    }
+    if four_z_squared_minus_1 > four_biggest_squared_minus_1 {
+        four_biggest_squared_minus_1 = four_z_squared_minus_1;
+        biggest_index = 3;
+    }
+
+    biggest_val := sqrt(four_biggest_squared_minus_1 + 1) * 0.5;
+    mult := 0.25 / biggest_val;
+
+    q := quaternion.{};
+    if biggest_index== {
+        case 0;
+            q.w = biggest_val;
+            q.x = (m.aa[2][1] - m.aa[1][2]) * mult;
+            q.y = (m.aa[0][2] - m.aa[2][0]) * mult;
+            q.z = (m.aa[1][0] - m.aa[0][1]) * mult;
+        case 1;
+            q.w = (m.aa[2][1] - m.aa[1][2]) * mult;
+            q.x = biggest_val;
+            q.y = (m.aa[1][0] + m.aa[0][1]) * mult;
+            q.z = (m.aa[0][2] + m.aa[2][0]) * mult;
+        case 2;
+            q.w = (m.aa[0][2] - m.aa[2][0]) * mult;
+            q.x = (m.aa[1][0] + m.aa[0][1]) * mult;
+            q.y = biggest_val;
+            q.z = (m.aa[2][1] + m.aa[1][2]) * mult;
+        case 3;
+            q.w = (m.aa[1][0] - m.aa[0][1]) * mult;
+            q.x = (m.aa[0][2] + m.aa[2][0]) * mult;
+            q.y = (m.aa[2][1] + m.aa[1][2]) * mult;
+            q.z = biggest_val;
+    }
+    return q;
+}
+
 quaternion_between_two_vectors :: (from : float3, to: float3) -> q: quaternion {
 	q : quaternion;
 	x := normalize(from);
@@ -448,6 +520,67 @@ quaternion_between_two_vectors :: (from : float3, to: float3) -> q: quaternion {
 	q.y = v.y;
 	q.z = v.z;
 	return normalize(q);
+}
+
+dot :: (a : quaternion, b: quaternion) -> (c: float) {
+	return a.w*a.w + a.x*b.x + a.y*b.y + a.z*b.z;
+}
+
+quaternion_inverse :: (q: quaternion) -> quaternion{
+	jq : Quaternion;
+	jq.x = q.x;
+	jq.y = q.y;
+	jq.z = q.z;
+	jq.w = q.w;
+	qq := conjugate(jq);
+	emq : quaternion;
+	emq.x = jq.x;
+	emq.y = jq.y;
+	emq.z = jq.z;
+	emq.w = jq.w;
+	return emq * quaternion.{w=1.0/dot(q, q), x=0, y=0, z=0};
+}
+
+matrix3_look_at :: (eye : float3, centre : float3 , up: float3) -> float3x3{
+	f := normalize(centre - eye);
+	s := normalize(cross(f, up));
+	u := cross(s, f);
+	return float3x3.{
+		+s.x, +s.y, +s.z,
+		+u.x, +u.y, +u.z,
+		-f.x, -f.y, -f.z,
+	};
+}
+
+quaternion_look_at :: (eye : float3, centre: float3 , up: float3) -> quaternion{
+	return quaternion_from_float3x3(matrix3_look_at(eye, centre, up));
+}
+
+rotate :: (v: float3, axis: float3, angle: float) -> float3{
+    // Normalize the rotation axis
+    axisn := normalize(axis);
+
+    // Calculate trigonometric functions
+    cosTheta := cos(angle);
+    sinTheta := sin(angle);
+
+    // Calculate components of the rotation matrix
+    x, y, z := axis.x, axis.y, axis.z;
+    oneMinusCosTheta := 1.0 - cosTheta;
+
+    rotMatrix := ([3]float).[
+        .[cosTheta + x * x * oneMinusCosTheta, x * y * oneMinusCosTheta - z * sinTheta, x * z * oneMinusCosTheta + y * sinTheta],
+        .[y * x * oneMinusCosTheta + z * sinTheta, cosTheta + y * y * oneMinusCosTheta, y * z * oneMinusCosTheta - x * sinTheta],
+        .[z * x * oneMinusCosTheta - y * sinTheta, z * y * oneMinusCosTheta + x * sinTheta, cosTheta + z * z * oneMinusCosTheta]
+    ];
+
+    // Perform the rotation
+    result: float3;
+    result.x = rotMatrix[0][0] * v.x + rotMatrix[0][1] * v.y + rotMatrix[0][2] * v.z;
+    result.y = rotMatrix[1][0] * v.x + rotMatrix[1][1] * v.y + rotMatrix[1][2] * v.z;
+    result.z = rotMatrix[2][0] * v.x + rotMatrix[2][1] * v.y + rotMatrix[2][2] * v.z;
+
+    return result;
 }
 
 #import "Math";
