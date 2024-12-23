@@ -208,6 +208,7 @@ float3x3 :: struct{
 	_11, _21, _31 : float;
     _12, _22, _32 : float;
     _13, _23, _33 : float;
+
 	#place _11;
 	c : [3]float3;
 	#place _11;
@@ -217,10 +218,10 @@ float3x3 :: struct{
 }
 
 float4x4 :: struct{
-	_11, _21, _31, _41 : float;
-    _12, _22, _32, _42 : float;
-    _13, _23, _33, _43 : float;
-    _14, _24, _34, _44 : float;
+	_11, _12, _13, _14 : float; // First column
+    _21, _22, _23, _24 : float; // Second column
+    _31, _32, _33, _34 : float; // Third column
+    _41, _42, _43, _44 : float; // Fourth column
 
 	#place _11;
 	c : [4]float4;
@@ -317,70 +318,44 @@ float4x4_from_quaternion :: (q: quaternion) -> float4x4{
 	return m;
 }
 
-transpose :: (using input : float4x4)-> float4x4{
-	return .{_11, _12, _13, _14,
-			 _21, _22, _23, _24,
-		 	 _31, _32, _33, _43,
-			 _41, _42, _43, _44};
+transpose :: (using input: float4x4) -> float4x4 {
+    return .{
+        input._11, input._21, input._31, input._41, // First row becomes the first column
+        input._12, input._22, input._32, input._42, // Second row becomes the second column
+        input._13, input._23, input._33, input._43, // Third row becomes the third column
+        input._14, input._24, input._34, input._44  // Fourth row becomes the fourth column
+    };
 }
 
 operator * :: (a: float4x4, b: float4x4) -> float4x4{
     return inline multiply(a, b);
 }
 
-multiply :: (m : float4x4,n : float4x4) -> float4x4 {
-    //result : float4x4 = float4x4_identity;
+multiply :: (m : float4x4, n : float4x4) -> float4x4 {
     result : float4x4 = ---;
-    
-    result._11 = m._11 * n._11 + m._12 * n._21 + m._13 * n._31 + m._14 * n._41;
-    result._12 = m._11 * n._12 + m._12 * n._22 + m._13 * n._32 + m._14 * n._42;
-    result._13 = m._11 * n._13 + m._12 * n._23 + m._13 * n._33 + m._14 * n._43;
-    result._14 = m._11 * n._14 + m._12 * n._24 + m._13 * n._34 + m._14 * n._44;
 
-    result._21 = m._21 * n._11 + m._22 * n._21 + m._23 * n._31 + m._24 * n._41;
-    result._22 = m._21 * n._12 + m._22 * n._22 + m._23 * n._32 + m._24 * n._42;
-    result._23 = m._21 * n._13 + m._22 * n._23 + m._23 * n._33 + m._24 * n._43;
-    result._24 = m._21 * n._14 + m._22 * n._24 + m._23 * n._34 + m._24 * n._44;
+    result._11 = m._11 * n._11 + m._21 * n._12 + m._31 * n._13 + m._41 * n._14;
+    result._12 = m._12 * n._11 + m._22 * n._12 + m._32 * n._13 + m._42 * n._14;
+    result._13 = m._13 * n._11 + m._23 * n._12 + m._33 * n._13 + m._43 * n._14;
+    result._14 = m._14 * n._11 + m._24 * n._12 + m._34 * n._13 + m._44 * n._14;
 
-    result._31 = m._31 * n._11 + m._32 * n._21 + m._33 * n._31 + m._34 * n._41;
-    result._32 = m._31 * n._12 + m._32 * n._22 + m._33 * n._32 + m._34 * n._42;
-    result._33 = m._31 * n._13 + m._32 * n._23 + m._33 * n._33 + m._34 * n._43;
-    result._34 = m._31 * n._14 + m._32 * n._24 + m._33 * n._34 + m._34 * n._44;
+    result._21 = m._11 * n._21 + m._21 * n._22 + m._31 * n._23 + m._41 * n._24;
+    result._22 = m._12 * n._21 + m._22 * n._22 + m._32 * n._23 + m._42 * n._24;
+    result._23 = m._13 * n._21 + m._23 * n._22 + m._33 * n._23 + m._43 * n._24;
+    result._24 = m._14 * n._21 + m._24 * n._22 + m._34 * n._23 + m._44 * n._24;
 
-    result._41 = m._41 * n._11 + m._42 * n._21 + m._43 * n._31 + m._44 * n._41;
-    result._42 = m._41 * n._12 + m._42 * n._22 + m._43 * n._32 + m._44 * n._42;
-    result._43 = m._41 * n._13 + m._42 * n._23 + m._43 * n._33 + m._44 * n._43;
-    result._44 = m._41 * n._14 + m._42 * n._24 + m._43 * n._34 + m._44 * n._44;
+    result._31 = m._11 * n._31 + m._21 * n._32 + m._31 * n._33 + m._41 * n._34;
+    result._32 = m._12 * n._31 + m._22 * n._32 + m._32 * n._33 + m._42 * n._34;
+    result._33 = m._13 * n._31 + m._23 * n._32 + m._33 * n._33 + m._43 * n._34;
+    result._34 = m._14 * n._31 + m._24 * n._32 + m._34 * n._33 + m._44 * n._34;
+
+    result._41 = m._11 * n._41 + m._21 * n._42 + m._31 * n._43 + m._41 * n._44;
+    result._42 = m._12 * n._41 + m._22 * n._42 + m._32 * n._43 + m._42 * n._44;
+    result._43 = m._13 * n._41 + m._23 * n._42 + m._33 * n._43 + m._43 * n._44;
+    result._44 = m._14 * n._41 + m._24 * n._42 + m._34 * n._43 + m._44 * n._44;
 
     return result;
 }
-multiply :: (m : float4x4,n : float4x4) -> float4x4 {
-	result : float4x4 = float4x4_identity;
-	
-    result._11 = m._11 * n._11 + m._21 * n._12 + m._31 * n._13 + m._41 * n._14;
-    result._21 = m._11 * n._21 + m._21 * n._22 + m._31 * n._23 + m._41 * n._24;
-    result._31 = m._11 * n._31 + m._21 * n._32 + m._31 * n._33 + m._41 * n._34;
-    result._41 = m._11 * n._41 + m._21 * n._42 + m._31 * n._43 + m._41 * n._44;
-
-    result._12 = m._12 * n._11 + m._22 * n._12 + m._32 * n._13 + m._42 * n._14;
-    result._22 = m._12 * n._21 + m._22 * n._22 + m._32 * n._23 + m._42 * n._24;
-    result._32 = m._12 * n._31 + m._22 * n._32 + m._32 * n._33 + m._42 * n._34;
-    result._42 = m._12 * n._41 + m._22 * n._42 + m._32 * n._43 + m._42 * n._44;
-
-    result._13 = m._13 * n._11 + m._23 * n._12 + m._33 * n._13 + m._43 * n._14;
-    result._23 = m._13 * n._21 + m._23 * n._22 + m._33 * n._23 + m._43 * n._24;
-    result._33 = m._13 * n._31 + m._23 * n._32 + m._33 * n._33 + m._43 * n._34;
-    result._43 = m._13 * n._41 + m._23 * n._42 + m._33 * n._43 + m._43 * n._44;
-
-    result._14 = m._14 * n._11 + m._24 * n._12 + m._34 * n._13 + m._44 * n._14;
-    result._24 = m._14 * n._21 + m._24 * n._22 + m._34 * n._23 + m._44 * n._24;
-    result._34 = m._14 * n._31 + m._24 * n._32 + m._34 * n._33 + m._44 * n._34;
-    result._44 = m._14 * n._41 + m._24 * n._42 + m._34 * n._43 + m._44 * n._44;
-
-	return result;
-}
-*/
-
 
 float_compare :: (a : float,b : float,tolerance : float)-> bool{
 	return abs(a - b) < tolerance;
@@ -608,13 +583,7 @@ inverse :: (m : float4x4)->float4x4,bool{
 	return cast,force(float4x4)(value),success;
 }
 
-operator * :: (m : float4x4 , v : float4)->float4{
-	mm := cast,force(Matrix4)m;
-	vv := cast,force(Vector4)v;
-	return cast,force(float4)multiply(mm,vv);
-}
-
-multiply :: (v: float4, m: float4x4) -> float4{
+mul :: (v: float4, m: float4x4) -> float4{
     result: float4 = ---;
     result.x = v.x * m._11 + v.y * m._21 + v.z * m._31 + v.w * m._41;
     result.y = v.x * m._12 + v.y * m._22 + v.z * m._32 + v.w * m._42;
@@ -623,8 +592,21 @@ multiply :: (v: float4, m: float4x4) -> float4{
     return result;
 }
 
+mul :: (m: float4x4, v: float4) -> float4 {
+    result: float4;
+    result.x = m._11 * v.x + m._21 * v.y + m._31 * v.z + m._41 * v.w;
+    result.y = m._12 * v.x + m._22 * v.y + m._32 * v.z + m._42 * v.w;
+    result.z = m._13 * v.x + m._23 * v.y + m._33 * v.z + m._43 * v.w;
+    result.w = m._14 * v.x + m._24 * v.y + m._34 * v.z + m._44 * v.w;
+    return result;
+}
+
 operator * :: (v : float4, m : float4x4)->float4{
 	return multiply(v,m);
+}
+
+operator * :: (m : float4x4,v : float4)->float4{
+	return multiply(m,v);
 }
 
 screen_to_world :: (projection_matrix : float4x4,cam_matrix : float4x4,buffer_dim : float2,screen_xy :  float2,z_depth :  float) -> float3{
