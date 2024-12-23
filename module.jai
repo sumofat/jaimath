@@ -42,7 +42,6 @@ operator * :: (a : float3,b : float) -> float3 #symmetric{
 	return c;
 }
 
-
 //@note we are unsure of the cross product gives us a correct result for our handiness.
 //and layout.
 operator * :: (m: quaternion, a: quaternion) -> quaternion {
@@ -64,7 +63,6 @@ operator * :: (m: quaternion, a: quaternion) -> quaternion {
     r.z = rv.z;
 
     return r;
-
 }
 
 operator + :: (a: quaternion, b: quaternion) -> quaternion {
@@ -219,6 +217,14 @@ float3x3 :: struct{
 }
 
 float4x4 :: struct{
+	/*row major layout
+
+	_11, _12, _13, _14 : float; // First column
+    _21, _22, _23, _24 : float; // Second column
+    _31, _32, _33, _34 : float; // Third column
+    _41, _42, _43, _44 : float; // Fourth column
+	*/
+
 	_11, _21, _31, _41 : float;
     _12, _22, _32, _42 : float;
     _13, _23, _33, _43 : float;
@@ -238,14 +244,38 @@ float4x4_from_trs :: (t: float3, r: quaternion, s: float3) -> float4x4{
 	translation := float4x4_translate(t);
 	rotation := float4x4_from_quaternion(r);
 	scale := float4x4_scale(s);
+	//return translation * rotation * scale;
 	return multiply(translation, multiply(rotation, scale));
+}
+
+
+//note tested
+float4x4_get_rotation_matrix :: (mat : float4x4)->float4x4{
+	rot_mat : float4x4;
+	xaxis := float3.{mat.aa[0][0],mat.aa[1][0],mat.aa[2][0]};
+	yaxis := float3.{mat.aa[0][1],mat.aa[1][1],mat.aa[2][1]};
+	zaxis := float3.{mat.aa[0][2],mat.aa[1][2],mat.aa[2][2]};
+
+	xaxis = normalize(xaxis);
+	yaxis = normalize(yaxis);
+	zaxis = normalize(zaxis);
+
+	rot_mat.c[0].xyz = xaxis;
+	rot_mat.c[1].xyz = yaxis;
+	rot_mat.c[2].xyz = zaxis;
+	return rot_mat;
 }
 
 float4x4_translate :: (v: float3) -> float4x4{
 	m := float4x4_identity;
+	/*
 	m.aa[3][0] = v.c[0];
 	m.aa[3][1] = v.c[1];
 	m.aa[3][2] = v.c[2];
+	*/
+	m._41 = v.x;
+	m._42 = v.y;
+	m._43 = v.z;
 	return m;
 }
 
@@ -306,6 +336,33 @@ operator * :: (a: float4x4, b: float4x4) -> float4x4{
     return inline multiply(a, b);
 }
 
+multiply :: (m : float4x4, n : float4x4) -> float4x4 {
+    result : float4x4 = ---;
+
+    result._11 = m._11 * n._11 + m._21 * n._12 + m._31 * n._13 + m._41 * n._14;
+    result._12 = m._12 * n._11 + m._22 * n._12 + m._32 * n._13 + m._42 * n._14;
+    result._13 = m._13 * n._11 + m._23 * n._12 + m._33 * n._13 + m._43 * n._14;
+    result._14 = m._14 * n._11 + m._24 * n._12 + m._34 * n._13 + m._44 * n._14;
+
+    result._21 = m._11 * n._21 + m._21 * n._22 + m._31 * n._23 + m._41 * n._24;
+    result._22 = m._12 * n._21 + m._22 * n._22 + m._32 * n._23 + m._42 * n._24;
+    result._23 = m._13 * n._21 + m._23 * n._22 + m._33 * n._23 + m._43 * n._24;
+    result._24 = m._14 * n._21 + m._24 * n._22 + m._34 * n._23 + m._44 * n._24;
+
+    result._31 = m._11 * n._31 + m._21 * n._32 + m._31 * n._33 + m._41 * n._34;
+    result._32 = m._12 * n._31 + m._22 * n._32 + m._32 * n._33 + m._42 * n._34;
+    result._33 = m._13 * n._31 + m._23 * n._32 + m._33 * n._33 + m._43 * n._34;
+    result._34 = m._14 * n._31 + m._24 * n._32 + m._34 * n._33 + m._44 * n._34;
+
+    result._41 = m._11 * n._41 + m._21 * n._42 + m._31 * n._43 + m._41 * n._44;
+    result._42 = m._12 * n._41 + m._22 * n._42 + m._32 * n._43 + m._42 * n._44;
+    result._43 = m._13 * n._41 + m._23 * n._42 + m._33 * n._43 + m._43 * n._44;
+    result._44 = m._14 * n._41 + m._24 * n._42 + m._34 * n._43 + m._44 * n._44;
+
+    return result;
+}
+/*
+
 multiply :: (m : float4x4,n : float4x4) -> float4x4 {
     //result : float4x4 = float4x4_identity;
     result : float4x4 = ---;
@@ -332,10 +389,6 @@ multiply :: (m : float4x4,n : float4x4) -> float4x4 {
 
     return result;
 }
-
-/*
-
-//This is the row matrix multiply
 multiply :: (m : float4x4,n : float4x4) -> float4x4 {
 	result : float4x4 = float4x4_identity;
 	
@@ -362,6 +415,7 @@ multiply :: (m : float4x4,n : float4x4) -> float4x4 {
 	return result;
 }
 */
+
 
 float_compare :: (a : float,b : float,tolerance : float)-> bool{
 	return abs(a - b) < tolerance;
@@ -608,4 +662,34 @@ operator * :: (v : float4, m : float4x4)->float4{
 	return multiply(v,m);
 }
 
-screen_to_world :: (projection_matrix : float4x4,cam_matrix : float4x4,buffer_dim : float2,screen_xy :  float2,z_depth 
+screen_to_world :: (projection_matrix : float4x4,cam_matrix : float4x4,buffer_dim : float2,screen_xy :  float2,z_depth :  float) -> float3{
+    result : float3;
+    ndc_p := float4.{
+        2.0 * screen_xy.x / buffer_dim.x - 1.0,
+        2.0 * screen_xy.y / buffer_dim.y - 1.0,
+        z_depth,
+        1.0,
+    };
+
+	clip_p := float4.{-ndc_p.x,-ndc_p.y,1.0,1.0};
+
+	inv_pro := inverse(projection_matrix);
+	view_space_p := inv_pro * clip_p;
+	view_space_p.z = 1.0;
+	view_space_p.w = 1.0;
+
+	inv_cam := inverse(cam_matrix);
+
+	world_space_p := inv_cam * view_space_p;
+	final_p := (world_space_p.xyz / world_space_p.w).xyz;
+	return final_p.xyz;
+}
+
+abs :: (a : float3)->float3{
+	ina := cast,force(Vector3)a;
+	return cast,force(float3)abs(ina);
+}
+
+#import "Math";
+#import "Basic";
+
