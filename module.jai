@@ -217,14 +217,6 @@ float3x3 :: struct{
 }
 
 float4x4 :: struct{
-	/*row major layout
-
-	_11, _12, _13, _14 : float; // First column
-    _21, _22, _23, _24 : float; // Second column
-    _31, _32, _33, _34 : float; // Third column
-    _41, _42, _43, _44 : float; // Fourth column
-	*/
-
 	_11, _21, _31, _41 : float;
     _12, _22, _32, _42 : float;
     _13, _23, _33, _43 : float;
