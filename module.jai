@@ -583,6 +583,29 @@ rotate :: (v: float3, axis: float3, angle: float) -> float3{
     return result;
 }
 
-#import "Math";
-#import "Basic";
+inverse :: (m : float4x4)->float4x4,bool{
+	in_m : Matrix4 = cast,force(Matrix4)m;
+	value,success := inverse(in_m);
+	return cast,force(float4x4)(value),success;
+}
 
+operator * :: (m : float4x4 , v : float4)->float4{
+	mm := cast,force(Matrix4)m;
+	vv := cast,force(Vector4)v;
+	return cast,force(float4)multiply(mm,vv);
+}
+
+multiply :: (v: float4, m: float4x4) -> float4{
+    result: float4 = ---;
+    result.x = v.x * m._11 + v.y * m._21 + v.z * m._31 + v.w * m._41;
+    result.y = v.x * m._12 + v.y * m._22 + v.z * m._32 + v.w * m._42;
+    result.z = v.x * m._13 + v.y * m._23 + v.z * m._33 + v.w * m._43;
+    result.w = v.x * m._14 + v.y * m._24 + v.z * m._34 + v.w * m._44;
+    return result;
+}
+
+operator * :: (v : float4, m : float4x4)->float4{
+	return multiply(v,m);
+}
+
+screen_to_world :: (projection_matrix : float4x4,cam_matrix : float4x4,buffer_dim : float2,screen_xy :  float2,z_depth 
