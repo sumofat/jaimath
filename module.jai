@@ -602,11 +602,11 @@ mul :: (m: float4x4, v: float4) -> float4 {
 }
 
 operator * :: (v : float4, m : float4x4)->float4{
-	return multiply(v,m);
+	return mul(v,m);
 }
 
 operator * :: (m : float4x4,v : float4)->float4{
-	return multiply(m,v);
+	return mul(m,v);
 }
 
 screen_to_world :: (projection_matrix : float4x4,cam_matrix : float4x4,buffer_dim : float2,screen_xy :  float2,z_depth :  float) -> float3{
