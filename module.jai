@@ -42,6 +42,20 @@ operator * :: (a : float3,b : float) -> float3 #symmetric{
 	return c;
 }
 
+operator * :: (a : float3,b : float3) -> float3 #symmetric{
+	c : float3 = ---;
+	c.x = a.x * b.x;
+	c.y = a.y * b.y;
+	c.z = a.z * b.z;
+	return c;
+}
+
+get_scale :: (m : float4x4)->float3{
+	return float3.{m._11,m._22,m._33};
+}
+
+
+
 //@note we are unsure of the cross product gives us a correct result for our handiness.
 //and layout.
 operator * :: (m: quaternion, a: quaternion) -> quaternion {
