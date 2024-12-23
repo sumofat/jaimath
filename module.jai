@@ -328,33 +328,6 @@ operator * :: (a: float4x4, b: float4x4) -> float4x4{
     return inline multiply(a, b);
 }
 
-multiply :: (m : float4x4, n : float4x4) -> float4x4 {
-    result : float4x4 = ---;
-
-    result._11 = m._11 * n._11 + m._21 * n._12 + m._31 * n._13 + m._41 * n._14;
-    result._12 = m._12 * n._11 + m._22 * n._12 + m._32 * n._13 + m._42 * n._14;
-    result._13 = m._13 * n._11 + m._23 * n._12 + m._33 * n._13 + m._43 * n._14;
-    result._14 = m._14 * n._11 + m._24 * n._12 + m._34 * n._13 + m._44 * n._14;
-
-    result._21 = m._11 * n._21 + m._21 * n._22 + m._31 * n._23 + m._41 * n._24;
-    result._22 = m._12 * n._21 + m._22 * n._22 + m._32 * n._23 + m._42 * n._24;
-    result._23 = m._13 * n._21 + m._23 * n._22 + m._33 * n._23 + m._43 * n._24;
-    result._24 = m._14 * n._21 + m._24 * n._22 + m._34 * n._23 + m._44 * n._24;
-
-    result._31 = m._11 * n._31 + m._21 * n._32 + m._31 * n._33 + m._41 * n._34;
-    result._32 = m._12 * n._31 + m._22 * n._32 + m._32 * n._33 + m._42 * n._34;
-    result._33 = m._13 * n._31 + m._23 * n._32 + m._33 * n._33 + m._43 * n._34;
-    result._34 = m._14 * n._31 + m._24 * n._32 + m._34 * n._33 + m._44 * n._34;
-
-    result._41 = m._11 * n._41 + m._21 * n._42 + m._31 * n._43 + m._41 * n._44;
-    result._42 = m._12 * n._41 + m._22 * n._42 + m._32 * n._43 + m._42 * n._44;
-    result._43 = m._13 * n._41 + m._23 * n._42 + m._33 * n._43 + m._43 * n._44;
-    result._44 = m._14 * n._41 + m._24 * n._42 + m._34 * n._43 + m._44 * n._44;
-
-    return result;
-}
-/*
-
 multiply :: (m : float4x4,n : float4x4) -> float4x4 {
     //result : float4x4 = float4x4_identity;
     result : float4x4 = ---;
